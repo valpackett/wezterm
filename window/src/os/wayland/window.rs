@@ -312,6 +312,8 @@ impl WaylandWindow {
 
             wegl_surface: None,
             gl_state: None,
+
+            start_time: Instant::now(),
         }));
 
         let window_handle = Window::Wayland(WaylandWindow(window_id));
@@ -582,6 +584,8 @@ pub struct WaylandWindowInner {
     // libraries will segfault on shutdown
     wegl_surface: Option<WlEglSurface>,
     gl_state: Option<Rc<glium::backend::Context>>,
+    // stores the time since the window was created
+    start_time: Instant,
 }
 
 impl WaylandWindowInner {
@@ -710,13 +714,13 @@ impl WaylandWindowInner {
                     MousePress::Middle => continue,
                 };
 
-                if let Some(action) = self.window_frame.on_click(Duration::ZERO, click, pressed) {
+                let timestamp = Instant::now().duration_since(self.start_time);
+
+                if let Some(action) = self.window_frame.on_click(timestamp, click, pressed) {
                     self.frame_action(PendingMouse::last_serial(&pending_mouse), action);
                 }
             }
-            if !PendingMouse::in_window(&pending_mouse) {
-                self.window_frame.click_point_left();
-            }
+
             return;
         }
 
